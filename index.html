@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nito Snake - Feliz Cumpleaños Michi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 100%;
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .score-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 10px 20px;
+            border-radius: 15px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .nito-icon {
+            width: 30px;
+            height: 30px;
+            background: url('./assets/sprite.png') center/contain no-repeat;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background: white;
+            border: 2px solid #764ba2;
+            color: #764ba2;
+            padding: 10px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(118, 75, 162, 0.2);
+        }
+
+        .btn:hover {
+            background: #764ba2;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(118, 75, 162, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        canvas {
+            border: 3px solid #764ba2;
+            border-radius: 15px;
+            background: #fafafa;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .on-screen-controls {
+            display: none;
+            margin-top: 20px;
+            gap: 10px;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .on-screen-controls.show {
+            display: flex;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 10px rgba(245, 87, 108, 0.3);
+        }
+
+        .victory-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.98);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20px;
+            z-index: 1000;
+        }
+
+        .victory-screen.show {
+            display: flex;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .victory-message {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            margin-bottom: 30px;
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #f5576c;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+
+        .balloon {
+            position: absolute;
+            width: 50px;
+            height: 60px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(-5deg);
+            }
+
+            50% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+            }
+
+            .victory-message {
+                font-size: 32px;
+            }
+
+            .on-screen-controls {
+                display: flex;
+            }
+
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+        }
+
+        @media (orientation: landscape) and (max-height: 500px) {
+            .game-header {
+                margin-bottom: 5px;
+            }
+
+            .on-screen-controls {
+                position: absolute;
+                right: 20px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: rgba(255, 255, 255, 0.9);
+                padding: 10px;
+                border-radius: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <div class="score-display">
+                <div class="nito-icon"></div>
+                <span id="score">0</span>
+            </div>
+            <div class="controls">
+                <button class="btn" id="pauseBtn">⏸️ Pausar</button>
+                <button class="btn" id="restartBtn">🔄 Reiniciar</button>
+                <button class="btn" id="controlsToggle">🎮 Controles</button>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="on-screen-controls" id="onScreenControls">
+            <div class="control-row">
+                <button class="control-btn" data-direction="up">↑</button>
+            </div>
+            <div class="control-row">
+                <button class="control-btn" data-direction="left">←</button>
+                <button class="control-btn" data-direction="down">↓</button>
+                <button class="control-btn" data-direction="right">→</button>
+            </div>
+        </div>
+
+        <div class="victory-screen" id="victoryScreen">
+            <div class="victory-message">🎉 Feliz Cumpleaños Michi 🎉</div>
+            <button class="btn" onclick="restartGame()">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const controlsToggle = document.getElementById('controlsToggle');
+        const onScreenControls = document.getElementById('onScreenControls');
+        const victoryScreen = document.getElementById('victoryScreen');
+
+        // Game settings
+        const GRID_SIZE = 20;
+        const CELL_SIZE = 25;
+        const GAME_SPEED = 100;
+        const WIN_SCORE = 25;
+
+        // Set canvas size
+        function resizeCanvas() {
+            const maxWidth = Math.min(window.innerWidth - 40, 800);
+            const maxHeight = Math.min(window.innerHeight - 250, 600);
+
+            canvas.width = Math.floor(maxWidth / CELL_SIZE) * CELL_SIZE;
+            canvas.height = Math.floor(maxHeight / CELL_SIZE) * CELL_SIZE;
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game state
+        let snake = [{ x: 10, y: 10 }];
+        let direction = { x: 1, y: 0 };
+        let nextDirection = { x: 1, y: 0 };
+        let food = {};
+        let score = 0;
+        let gameRunning = true;
+        let isPaused = false;
+        let mouthOpen = false;
+
+        // Nito sprite (simplified chocolate roll)
+        function drawNito(x, y, size = CELL_SIZE) {
+            const centerX = x + size / 2;
+            const centerY = y + size / 2;
+            const radius = size * 0.4;
+
+            // Chocolate exterior
+            ctx.fillStyle = '#4A2813';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cream swirl
+            ctx.strokeStyle = '#FFF5E6';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 1.5);
+            ctx.stroke();
+
+            // Chocolate details
+            ctx.fillStyle = '#6B4423';
+            ctx.beginPath();
+            ctx.arc(centerX - radius * 0.3, centerY - radius * 0.3, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(centerX + radius * 0.3, centerY + radius * 0.3, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Initialize food
+        function generateFood() {
+            const cols = Math.floor(canvas.width / CELL_SIZE);
+            const rows = Math.floor(canvas.height / CELL_SIZE);
+
+            do {
+                food = {
+                    x: Math.floor(Math.random() * cols),
+                    y: Math.floor(Math.random() * rows)
+                };
+            } while (snake.some(segment => segment.x === food.x && segment.y === food.y));
+        }
+
+        // Draw snake
+        function drawSnake() {
+            snake.forEach((segment, index) => {
+                const x = segment.x * CELL_SIZE;
+                const y = segment.y * CELL_SIZE;
+
+                if (index === 0) {
+                    // Snake head
+                    ctx.fillStyle = '#764ba2';
+                    ctx.fillRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+
+                    // Eyes
+                    ctx.fillStyle = 'white';
+                    const eyeSize = 4;
+                    const eyeY = y + 8;
+
+                    if (direction.x === 1) { // Right
+                        ctx.fillRect(x + CELL_SIZE - 10, eyeY, eyeSize, eyeSize);
+                        ctx.fillRect(x + CELL_SIZE - 10, eyeY + 8, eyeSize, eyeSize);
+                    } else if (direction.x === -1) { // Left
+                        ctx.fillRect(x + 6, eyeY, eyeSize, eyeSize);
+                        ctx.fillRect(x + 6, eyeY + 8, eyeSize, eyeSize);
+                    } else if (direction.y === -1) { // Up
+                        ctx.fillRect(x + 6, y + 6, eyeSize, eyeSize);
+                        ctx.fillRect(x + 14, y + 6, eyeSize, eyeSize);
+                    } else { // Down
+                        ctx.fillRect(x + 6, y + CELL_SIZE - 10, eyeSize, eyeSize);
+                        ctx.fillRect(x + 14, y + CELL_SIZE - 10, eyeSize, eyeSize);
+                    }
+
+                    // Mouth animation
+                    if (mouthOpen) {
+                        ctx.fillStyle = '#ff69b4';
+                        const mouthSize = 6;
+                        if (direction.x === 1) {
+                            ctx.fillRect(x + CELL_SIZE - 4, y + CELL_SIZE / 2 - 3, 4, mouthSize);
+                        } else if (direction.x === -1) {
+                            ctx.fillRect(x, y + CELL_SIZE / 2 - 3, 4, mouthSize);
+                        } else if (direction.y === -1) {
+                            ctx.fillRect(x + CELL_SIZE / 2 - 3, y, mouthSize, 4);
+                        } else {
+                            ctx.fillRect(x + CELL_SIZE / 2 - 3, y + CELL_SIZE - 4, mouthSize, 4);
+                        }
+                    }
+                } else {
+                    // Snake body
+                    const gradient = ctx.createLinearGradient(x, y, x + CELL_SIZE, y + CELL_SIZE);
+                    gradient.addColorStop(0, '#f093fb');
+                    gradient.addColorStop(1, '#f5576c');
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(x + 3, y + 3, CELL_SIZE - 6, CELL_SIZE - 6);
+                }
+            });
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (!gameRunning || isPaused) return;
+
+            // Update direction
+            direction = { ...nextDirection };
+
+            // Move snake
+            const head = { ...snake[0] };
+            head.x += direction.x;
+            head.y += direction.y;
+
+            // Check walls
+            const cols = Math.floor(canvas.width / CELL_SIZE);
+            const rows = Math.floor(canvas.height / CELL_SIZE);
+
+            if (head.x < 0 || head.x >= cols || head.y < 0 || head.y >= rows) {
+                gameOver();
+                return;
+            }
+
+            // Check self collision
+            if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                gameOver();
+                return;
+            }
+
+            snake.unshift(head);
+
+            // Check food collision
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                scoreElement.textContent = score;
+                playChewSound();
+
+                if (score >= WIN_SCORE) {
+                    victory();
+                    return;
+                }
+
+                generateFood();
+            } else {
+                snake.pop();
+            }
+
+            // Check if near food for mouth animation
+            const distance = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
+            mouthOpen = distance <= 2;
+
+            // Draw everything
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i <= cols; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * CELL_SIZE, 0);
+                ctx.lineTo(i * CELL_SIZE, canvas.height);
+                ctx.stroke();
+            }
+            for (let i = 0; i <= rows; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, i * CELL_SIZE);
+                ctx.lineTo(canvas.width, i * CELL_SIZE);
+                ctx.stroke();
+            }
+
+            drawSnake();
+            drawNito(food.x * CELL_SIZE, food.y * CELL_SIZE);
+
+            setTimeout(gameLoop, GAME_SPEED);
+        }
+
+        // Sound effect (placeholder)
+        function playChewSound() {
+            // Create a simple beep sound
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            gainNode.gain.value = 0.1;
+
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 30px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('¡Juego Terminado!', canvas.width / 2, canvas.height / 2);
+            ctx.font = '20px Arial';
+            ctx.fillText(`Nitos comidos: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
+        }
+
+        // Victory
+        function victory() {
+            gameRunning = false;
+            victoryScreen.classList.add('show');
+            createConfetti();
+            createBalloons();
+        }
+
+        // Create confetti
+        function createConfetti() {
+            const colors = ['#f5576c', '#f093fb', '#667eea', '#764ba2', '#ffd700'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                    confetti.style.animationDelay = Math.random() * 2 + 's';
+                    victoryScreen.appendChild(confetti);
+                }, i * 100);
+            }
+        }
+
+        // Create balloons
+        function createBalloons() {
+            const colors = ['#ff69b4', '#ff1493', '#da70d6', '#9370db'];
+            for (let i = 0; i < 8; i++) {
+                const balloon = document.createElement('div');
+                balloon.className = 'balloon';
+                balloon.style.left = (i * 12.5) + '%';
+                balloon.style.bottom = '-80px';
+                balloon.style.backgroundColor = colors[i % colors.length];
+                balloon.style.animationDelay = (i * 0.2) + 's';
+                victoryScreen.appendChild(balloon);
+            }
+        }
+
+        // Controls
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning || isPaused) return;
+
+            switch (e.key) {
+                case 'ArrowUp':
+                    if (direction.y === 0) nextDirection = { x: 0, y: -1 };
+                    break;
+                case 'ArrowDown':
+                    if (direction.y === 0) nextDirection = { x: 0, y: 1 };
+                    break;
+                case 'ArrowLeft':
+                    if (direction.x === 0) nextDirection = { x: -1, y: 0 };
+                    break;
+                case 'ArrowRight':
+                    if (direction.x === 0) nextDirection = { x: 1, y: 0 };
+                    break;
+            }
+        });
+
+        // On-screen controls
+        document.querySelectorAll('.control-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!gameRunning || isPaused) return;
+
+                const dir = btn.dataset.direction;
+                switch (dir) {
+                    case 'up':
+                        if (direction.y === 0) nextDirection = { x: 0, y: -1 };
+                        break;
+                    case 'down':
+                        if (direction.y === 0) nextDirection = { x: 0, y: 1 };
+                        break;
+                    case 'left':
+                        if (direction.x === 0) nextDirection = { x: -1, y: 0 };
+                        break;
+                    case 'right':
+                        if (direction.x === 0) nextDirection = { x: 1, y: 0 };
+                        break;
+                }
+            });
+        });
+
+        // Touch controls
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        canvas.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (!gameRunning || isPaused) return;
+
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 0 && direction.x === 0) {
+                    nextDirection = { x: 1, y: 0 };
+                } else if (dx < 0 && direction.x === 0) {
+                    nextDirection = { x: -1, y: 0 };
+                }
+            } else {
+                if (dy > 0 && direction.y === 0) {
+                    nextDirection = { x: 0, y: 1 };
+                } else if (dy < 0 && direction.y === 0) {
+                    nextDirection = { x: 0, y: -1 };
+                }
+            }
+        });
+
+        // Button controls
+        pauseBtn.addEventListener('click', () => {
+            isPaused = !isPaused;
+            pauseBtn.textContent = isPaused ? '▶️ Continuar' : '⏸️ Pausar';
+            if (!isPaused && gameRunning) gameLoop();
+        });
+
+        restartBtn.addEventListener('click', restartGame);
+
+        controlsToggle.addEventListener('click', () => {
+            onScreenControls.classList.toggle('show');
+        });
+
+        function restartGame() {
+            snake = [{ x: 10, y: 10 }];
+            direction = { x: 1, y: 0 };
+            nextDirection = { x: 1, y: 0 };
+            score = 0;
+            scoreElement.textContent = score;
+            gameRunning = true;
+            isPaused = false;
+            pauseBtn.textContent = '⏸️ Pausar';
+            victoryScreen.classList.remove('show');
+            victoryScreen.innerHTML = `
+                <div class="victory-message">🎉 Feliz Cumpleaños Michi 🎉</div>
+                <button class="btn" onclick="restartGame()">Jugar de Nuevo</button>
+            `;
+            generateFood();
+            gameLoop();
+        }
+
+        // Initialize game
+        generateFood();
+        gameLoop();
+    </script>
+</body>
+
+</html>

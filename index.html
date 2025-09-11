@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nito Snake - Feliz Cumpleaños Michi</title>
+    <link rel="icon" href="./assets/images/favicon.png" type="image/png">
     <style>
         * {
             margin: 0;
@@ -21,6 +22,12 @@
             align-items: center;
             padding: 10px;
             overflow: hidden;
+        }
+
+        h1.game-title {
+            color: #764ba2;
+            ;
+            margin-bottom: 20px;
         }
 
         .game-container {
@@ -62,7 +69,7 @@
         .nito-icon {
             width: 30px;
             height: 30px;
-            background: url('./assets/sprite.png') center/contain no-repeat;
+            background: url('./assets/images/nito.svg') center/contain no-repeat;
         }
 
         .controls {
@@ -265,11 +272,26 @@
                 border-radius: 15px;
             }
         }
+
+        .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
     </style>
 </head>
 
 <body>
     <div class="game-container">
+        <h1 class="game-title">Nito Snake</h1>
         <div class="game-header">
             <div class="score-display">
                 <div class="nito-icon"></div>
@@ -296,8 +318,11 @@
         </div>
 
         <div class="victory-screen" id="victoryScreen">
-            <div class="victory-message">🎉 Feliz Cumpleaños Michi 🎉</div>
+            <div class="victory-message">🎉 Feliz Cumpleaños 25 Michi 🎉</div>
             <button class="btn" onclick="restartGame()">Jugar de Nuevo</button>
+        </div>
+        <div class="start-screen" id="startScreen">
+            <button class="btn" id="startGameBtn">Jugar</button>
         </div>
     </div>
 
@@ -310,7 +335,9 @@
         const controlsToggle = document.getElementById('controlsToggle');
         const onScreenControls = document.getElementById('onScreenControls');
         const victoryScreen = document.getElementById('victoryScreen');
-
+        const startScreen = document.getElementById('startScreen');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const audioFilePath = './assets/audio/nam.mp3'
         // Game settings
         const GRID_SIZE = 20;
         const CELL_SIZE = 25;
@@ -335,37 +362,32 @@
         let nextDirection = { x: 1, y: 0 };
         let food = {};
         let score = 0;
-        let gameRunning = true;
+        let gameRunning = false;
         let isPaused = false;
         let mouthOpen = false;
+        let gameLoopTimeoutId;
 
-        // Nito sprite (simplified chocolate roll)
+
         function drawNito(x, y, size = CELL_SIZE) {
-            const centerX = x + size / 2;
-            const centerY = y + size / 2;
-            const radius = size * 0.4;
+            if (nitoImage.complete) {
+                ctx.drawImage(nitoImage, x - 5, y - 5, size + 10, size + 10);
+            } else {
+                // Optional: Draw the arcs as a fallback if the image isn't loaded yet
+                console.warn('Image not yet loaded. Drawing fallback arcs.');
 
-            // Chocolate exterior
-            ctx.fillStyle = '#4A2813';
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Cream swirl
-            ctx.strokeStyle = '#FFF5E6';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 1.5);
-            ctx.stroke();
-
-            // Chocolate details
-            ctx.fillStyle = '#6B4423';
-            ctx.beginPath();
-            ctx.arc(centerX - radius * 0.3, centerY - radius * 0.3, 2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(centerX + radius * 0.3, centerY + radius * 0.3, 2, 0, Math.PI * 2);
-            ctx.fill();
+                const centerX = x + size / 2;
+                const centerY = y + size / 2;
+                const radius = size * 0.4;
+                ctx.fillStyle = '#4A2813';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#FFF5E6';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 1.5);
+                ctx.stroke();
+            }
         }
 
         // Initialize food
@@ -469,7 +491,7 @@
             if (head.x === food.x && head.y === food.y) {
                 score++;
                 scoreElement.textContent = score;
-                playChewSound();
+                playChewSound(audioFilePath);
 
                 if (score >= WIN_SCORE) {
                     victory();
@@ -507,42 +529,39 @@
             drawSnake();
             drawNito(food.x * CELL_SIZE, food.y * CELL_SIZE);
 
-            setTimeout(gameLoop, GAME_SPEED);
+            gameLoopTimeoutId = setTimeout(gameLoop, GAME_SPEED);
         }
 
-        // Sound effect (placeholder)
-        function playChewSound() {
-            // Create a simple beep sound
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.frequency.value = 800;
-            oscillator.type = 'sine';
-            gainNode.gain.value = 0.1;
-
-            oscillator.start();
-            oscillator.stop(audioContext.currentTime + 0.1);
+        function playChewSound(filePath) {
+            const audio = new Audio(filePath);
+            audio.play();
         }
 
         // Game over
         function gameOver() {
+            clearTimeout(gameLoopTimeoutId);
             gameRunning = false;
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'white';
-            ctx.font = 'bold 30px Arial';
+            ctx.font = 'bold 40px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('¡Juego Terminado!', canvas.width / 2, canvas.height / 2);
+            ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
             ctx.font = '20px Arial';
-            ctx.fillText(`Nitos comidos: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
+            ctx.fillText(`Nitos comidos: ${score}`, canvas.width / 2 + 10, canvas.height / 2 + 40);
+
+            const iconWidth = 30;
+            const iconHeight = 30;
+            const iconX = (canvas.width / 2) - (score > 9 ? 98 : 95);
+            const iconY = (canvas.height / 2) + 15;
+
+            // Draw the icon onto the canvas
+            ctx.drawImage(nitoImage, iconX, iconY, iconWidth, iconHeight);
         }
 
         // Victory
         function victory() {
+            clearTimeout(gameLoopTimeoutId);
             gameRunning = false;
             victoryScreen.classList.add('show');
             createConfetti();
@@ -668,7 +687,17 @@
             onScreenControls.classList.toggle('show');
         });
 
+        function startGame() {
+            startScreen.style.display = 'none';
+            gameRunning = true;
+            generateFood();
+            gameLoop();
+        }
+
+        startGameBtn.addEventListener('click', startGame);
+
         function restartGame() {
+            clearTimeout(gameLoopTimeoutId);
             snake = [{ x: 10, y: 10 }];
             direction = { x: 1, y: 0 };
             nextDirection = { x: 1, y: 0 };
@@ -679,16 +708,24 @@
             pauseBtn.textContent = '⏸️ Pausar';
             victoryScreen.classList.remove('show');
             victoryScreen.innerHTML = `
-                <div class="victory-message">🎉 Feliz Cumpleaños Michi 🎉</div>
+                <div class="victory-message">🎉 Feliz Cumpleaños 25 Michi 🎉</div>
                 <button class="btn" onclick="restartGame()">Jugar de Nuevo</button>
             `;
             generateFood();
             gameLoop();
         }
 
+        const nitoImage = new Image();
+        nitoImage.src = './assets/images/nito.svg';
+
+        // You can use an onload event if you need to perform actions
+        // after the image is guaranteed to be ready.
+        nitoImage.onload = () => {
+            console.log('Nito image loaded successfully.');
+        };
+
         // Initialize game
         generateFood();
-        gameLoop();
     </script>
 </body>
 

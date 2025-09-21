@@ -237,6 +237,11 @@
             }
         }
 
+        .clickable-before-start {
+            position: relative;
+            z-index: 2001;
+        }
+
         @media (max-width: 768px) {
             .game-container {
                 padding: 15px;
@@ -246,14 +251,31 @@
                 font-size: 32px;
             }
 
-            .on-screen-controls {
-                display: flex;
-            }
-
             .control-btn {
                 width: 50px;
                 height: 50px;
                 font-size: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .controls {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+
+            .btn-text {
+                display: none;
+            }
+
+            h1.game-title {
+                font-size: 24px;
+                margin-bottom: 10px;
             }
         }
 
@@ -298,9 +320,11 @@
                 <span id="score">0</span>
             </div>
             <div class="controls">
-                <button class="btn" id="pauseBtn">⏸️ Pausar</button>
-                <button class="btn" id="restartBtn">🔄 Reiniciar</button>
-                <button class="btn" id="controlsToggle">🎮 Controles</button>
+                <button class="btn" id="pauseBtn">⏸️ <span class="btn-text">Pausar</span></button>
+                <button class="btn" id="restartBtn">🔄 <span class="btn-text">Reiniciar</span></button>
+                <button class="btn clickable-before-start" id="controlsToggle">🎮 <span
+                        class="btn-text">Controles</span></button>
+                <button class="btn clickable-before-start" id="muteBtn">🔊 <span class="btn-text">Sonido</span></button>
             </div>
         </div>
 
@@ -337,11 +361,23 @@
         const victoryScreen = document.getElementById('victoryScreen');
         const startScreen = document.getElementById('startScreen');
         const startGameBtn = document.getElementById('startGameBtn');
+        const muteBtn = document.getElementById('muteBtn');
         const audioFilePath = './assets/audio/nam.mp3'
         // Game settings
         const GRID_SIZE = 20;
         const CELL_SIZE = 25;
-        const GAME_SPEED = 100;
+        let gameSpeed = 100;
+
+        function adjustGameSpeed() {
+            if (window.innerWidth < 768) {
+                gameSpeed = 125; // Slower speed for mobile
+            } else {
+                gameSpeed = 100; // Default speed for desktop
+            }
+        }
+
+        adjustGameSpeed();
+        window.addEventListener('resize', adjustGameSpeed);
         const WIN_SCORE = 25;
 
         // Set canvas size
@@ -358,14 +394,26 @@
 
         // Game state
         let snake = [{ x: 10, y: 10 }];
-        let direction = { x: 1, y: 0 };
-        let nextDirection = { x: 1, y: 0 };
+        
+        function getRandomDirection() {
+            const directions = [
+                { x: 1, y: 0 }, // Right
+                { x: -1, y: 0 }, // Left
+                { x: 0, y: 1 }, // Down
+                { x: 0, y: -1 }  // Up
+            ];
+            return directions[Math.floor(Math.random() * directions.length)];
+        }
+
+        let direction = getRandomDirection();
+        let nextDirection = { ...direction };
         let food = {};
         let score = 0;
         let gameRunning = false;
         let isPaused = false;
         let mouthOpen = false;
         let gameLoopTimeoutId;
+        let isMuted = false;
 
 
         function drawNito(x, y, size = CELL_SIZE) {
@@ -529,13 +577,19 @@
             drawSnake();
             drawNito(food.x * CELL_SIZE, food.y * CELL_SIZE);
 
-            gameLoopTimeoutId = setTimeout(gameLoop, GAME_SPEED);
+            gameLoopTimeoutId = setTimeout(gameLoop, gameSpeed);
         }
 
         function playChewSound(filePath) {
+            if (isMuted) return;
             const audio = new Audio(filePath);
             audio.play();
         }
+
+        muteBtn.addEventListener('click', () => {
+            isMuted = !isMuted;
+            muteBtn.innerHTML = isMuted ? '🔇 <span class="btn-text">Sonido</span>' : '🔊 <span class="btn-text">Sonido</span>';
+        });
 
         // Game over
         function gameOver() {
@@ -677,7 +731,11 @@
         // Button controls
         pauseBtn.addEventListener('click', () => {
             isPaused = !isPaused;
-            pauseBtn.textContent = isPaused ? '▶️ Continuar' : '⏸️ Pausar';
+            if (isPaused) {
+                pauseBtn.innerHTML = '▶️ <span class="btn-text">Continuar</span>';
+            } else {
+                pauseBtn.innerHTML = '⏸️ <span class="btn-text">Pausar</span>';
+            }
             if (!isPaused && gameRunning) gameLoop();
         });
 
@@ -699,13 +757,13 @@
         function restartGame() {
             clearTimeout(gameLoopTimeoutId);
             snake = [{ x: 10, y: 10 }];
-            direction = { x: 1, y: 0 };
-            nextDirection = { x: 1, y: 0 };
+            direction = getRandomDirection();
+            nextDirection = { ...direction };
             score = 0;
             scoreElement.textContent = score;
             gameRunning = true;
             isPaused = false;
-            pauseBtn.textContent = '⏸️ Pausar';
+            pauseBtn.innerHTML = '⏸️ <span class="btn-text">Pausar</span>';
             victoryScreen.classList.remove('show');
             victoryScreen.innerHTML = `
                 <div class="victory-message">🎉 Feliz Cumpleaños 25 Michi 🎉</div>

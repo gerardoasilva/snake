@@ -161,7 +161,7 @@
             justify-content: center;
             align-items: center;
             border-radius: 20px;
-            z-index: 1000;
+            z-index: 2002;
         }
 
         .victory-screen.show {
@@ -343,7 +343,7 @@
 
         <div class="victory-screen" id="victoryScreen">
             <div class="victory-message">🎉 Feliz Cumpleaños 25 Michi 🎉</div>
-            <button class="btn" onclick="restartGame()">Jugar de Nuevo</button>
+            <button class="btn" id="continueBtn">Continuar</button>
         </div>
         <div class="start-screen" id="startScreen">
             <button class="btn" id="startGameBtn">Jugar</button>
@@ -362,6 +362,7 @@
         const startScreen = document.getElementById('startScreen');
         const startGameBtn = document.getElementById('startGameBtn');
         const muteBtn = document.getElementById('muteBtn');
+        const continueBtn = document.getElementById('continueBtn');
         const audioFilePath = './assets/audio/nam.mp3'
         // Game settings
         const GRID_SIZE = 20;
@@ -414,6 +415,7 @@
         let mouthOpen = false;
         let gameLoopTimeoutId;
         let isMuted = false;
+        let firstWin = true;
 
 
         function drawNito(x, y, size = CELL_SIZE) {
@@ -541,9 +543,9 @@
                 scoreElement.textContent = score;
                 playChewSound(audioFilePath);
 
-                if (score >= WIN_SCORE) {
+                if (score === WIN_SCORE && firstWin) {
                     victory();
-                    return;
+                    firstWin = false;
                 }
 
                 generateFood();
@@ -615,8 +617,7 @@
 
         // Victory
         function victory() {
-            clearTimeout(gameLoopTimeoutId);
-            gameRunning = false;
+            isPaused = true;
             victoryScreen.classList.add('show');
             createConfetti();
             createBalloons();
@@ -745,6 +746,12 @@
             onScreenControls.classList.toggle('show');
         });
 
+        continueBtn.addEventListener('click', () => {
+            victoryScreen.classList.remove('show');
+            isPaused = false;
+            gameLoop();
+        });
+
         function startGame() {
             startScreen.style.display = 'none';
             gameRunning = true;
@@ -765,10 +772,6 @@
             isPaused = false;
             pauseBtn.innerHTML = '⏸️ <span class="btn-text">Pausar</span>';
             victoryScreen.classList.remove('show');
-            victoryScreen.innerHTML = `
-                <div class="victory-message">🎉 Feliz Cumpleaños 25 Michi 🎉</div>
-                <button class="btn" onclick="restartGame()">Jugar de Nuevo</button>
-            `;
             generateFood();
             gameLoop();
         }
